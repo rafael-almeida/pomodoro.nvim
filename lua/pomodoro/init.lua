@@ -17,6 +17,10 @@ local setup = function(config)
 end
 
 local start = function()
+    if seconds_remaining == nil then
+        setup()
+    end
+
     timer = vim.loop.new_timer()
     timer.start(timer, 0, 1000, tick_callback)
 end
