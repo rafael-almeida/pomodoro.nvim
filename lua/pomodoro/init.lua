@@ -31,7 +31,7 @@ local tick_callback = function()
 end
 
 local resume_timer = function()
-    if timer == nil or !is_paused then
+    if timer == nil or not is_paused then
         return
     end
 
