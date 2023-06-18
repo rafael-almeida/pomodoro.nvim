@@ -1,3 +1,5 @@
+local DEFAULT_SESSION_DURATION = 25 * 60
+
 local timer
 local seconds_remaining
 
@@ -8,21 +10,15 @@ local tick_callback = function()
     end
 end
 
-local setup = function(config)
-    if config.session_duration then
-        seconds_remaining = config.session_duration * 60
-    else
-        seconds_remaining = 25 * 60
-    end
-end
-
 local start = function()
-    if seconds_remaining == nil then
-        setup()
-    end
-
     timer = vim.loop.new_timer()
     timer.start(timer, 0, 1000, tick_callback)
+end
+
+local setup = function()
+    vim.api.nvim_create_user_command("PomodoroStart", start, { nargs = 0 })
+
+    seconds_remaining = DEFAULT_SESSION_DURATION
 end
 
 local format_time = function(seconds)
