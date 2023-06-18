@@ -1,5 +1,3 @@
-local TWENTY_FIVE_MINUTES_IN_SECS = 25 * 60
-
 local timer
 local seconds_remaining
 
@@ -10,15 +8,15 @@ local tick_callback = function()
     end
 end
 
-local reset = function()
-    seconds_remaining = TWENTY_FIVE_MINUTES_IN_SECS
+local setup = function(config)
+    if config.session_duration then
+        seconds_remaining = config.session_duration * 60
+    else
+        seconds_remaining = 25 * 60
+    end
 end
 
 local start = function()
-    if not seconds_remaining then
-        reset()
-    end
-
     timer = vim.loop.new_timer()
     timer.start(timer, 0, 1000, tick_callback)
 end
@@ -33,9 +31,8 @@ local get_remaining_time = function()
     return ' ' .. format_time(seconds_remaining)
 end
 
-local M = {}
-
-M.start = start
-M.get_remaining_time = get_remaining_time
-
-return M
+return {
+    setup = setup,
+    start = start,
+    get_remaining_time = get_remaining_time,
+}
