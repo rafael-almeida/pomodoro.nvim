@@ -1,6 +1,4 @@
-local ZERO_SECONDS = 0
-local ONE_SECOND = 1000
-local TWENTY_FIVE_MINUTES = 25 * 60 -- in seconds
+local TWENTY_FIVE_MINUTES_IN_SECS = 25 * 60
 
 local timer
 local seconds_remaining
@@ -13,7 +11,7 @@ local tick_callback = function()
 end
 
 local reset = function()
-    seconds_remaining = TWENTY_FIVE_MINUTES
+    seconds_remaining = TWENTY_FIVE_MINUTES_IN_SECS
 end
 
 local start = function()
@@ -22,7 +20,7 @@ local start = function()
     end
 
     timer = vim.loop.new_timer()
-    timer.start(timer, ZERO_SECONDS, ONE_SECOND, tick_callback)
+    timer.start(timer, 0, 1000, tick_callback)
 end
 
 local format_time = function(seconds)
