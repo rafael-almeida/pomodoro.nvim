@@ -2,7 +2,6 @@ local DEFAULT_SESSION_DURATION = 25 * 60
 
 local timer
 local seconds_remaining
-local is_paused = false
 
 local stop_timer = function()
     if timer == nil then
@@ -15,7 +14,7 @@ local stop_timer = function()
 end
 
 local pause_timer = function()
-    if timer == nil or is_paused then
+    if timer == nil then
         return
     end
 
@@ -30,15 +29,6 @@ local tick_callback = function()
     end
 end
 
-local resume_timer = function()
-    if not is_paused then
-        return
-    end
-
-    timer = vim.loop.new_timer()
-    timer.start(timer, 0, 1000, tick_callback)
-end
-
 local start_timer = function()
     timer = vim.loop.new_timer()
     timer.start(timer, 0, 1000, tick_callback)
@@ -48,7 +38,10 @@ local setup = function()
     vim.api.nvim_create_user_command("PomodoroStart", start_timer, { nargs = 0 })
     vim.api.nvim_create_user_command("PomodoroStop", stop_timer, { nargs = 0 })
     vim.api.nvim_create_user_command("PomodoroPause", pause_timer, { nargs = 0 })
-    vim.api.nvim_create_user_command("PomodoroResume", resume_timer, { nargs = 0 })
+
+    vim.keymap.set("n", "<leader>ttn", start_timer, { noremap = true, silent = true }) -- start session
+    vim.keymap.set("n", "<leader>tts", stop_timer, { noremap = true, silent = true })  -- stop session
+    vim.keymap.set("n", "<leader>ttp", pause_timer, { noremap = true, silent = true }) -- pause session
 
     seconds_remaining = DEFAULT_SESSION_DURATION
 end
@@ -68,6 +61,5 @@ return {
     start = start_timer,
     stop = stop_timer,
     pause = pause_timer,
-    resume = resume_timer,
     get_remaining_time = get_remaining_time,
 }
