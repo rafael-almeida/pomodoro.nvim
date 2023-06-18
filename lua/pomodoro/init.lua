@@ -40,7 +40,7 @@ local setup = function()
     vim.api.nvim_create_user_command("PomodoroPause", pause_timer, { nargs = 0 })
 
     vim.keymap.set("n", "<leader>tts", start_timer, { noremap = true, silent = true }) -- start session
-    vim.keymap.set("n", "<leader>ttx", stop_timer, { noremap = true, silent = true })  -- stop session
+    vim.keymap.set("n", "<leader>tto", stop_timer, { noremap = true, silent = true })  -- stop session
     vim.keymap.set("n", "<leader>ttp", pause_timer, { noremap = true, silent = true }) -- pause session
 
     seconds_remaining = DEFAULT_SESSION_DURATION
