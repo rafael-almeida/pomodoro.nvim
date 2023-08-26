@@ -1,7 +1,7 @@
 local M = {}
 
 local defaults = {
-    session_duration = 0.05,
+    session_duration = 25,
     icons = true,
     timeout_window = true,
     signs = {
