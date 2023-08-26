@@ -1,65 +1,102 @@
-local DEFAULT_SESSION_DURATION = 25 * 60
+local config = require('pomodoro.config')
+local util = require('pomodoro.util')
 
-local timer
-local seconds_remaining
+local session_duration_in_secs = config.options.session_duration * 60
 
-local stop_timer = function()
-    if timer == nil then
-        return
-    end
+local Pomodoro = {
+    timer = nil,
+    start_time = nil,
+    last_time = nil,
+    remaining_secs = session_duration_in_secs,
+}
 
-    timer.stop(timer)
-    timer = nil
-    seconds_remaining = DEFAULT_SESSION_DURATION
-end
+local function open_popup_win()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local lines = {
+        '                     ',
+        '      POMODORO       ',
+        '                     ',
+        '  Session Completed  ',
+        '                     ',
+    }
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-local pause_timer = function()
-    if timer == nil then
-        return
-    end
+    local width = 21
+    local height = 5
+    local win_opts = {
+        style = 'minimal',
+        relative = 'editor',
+        width = width,
+        height = height,
+        row = (vim.o.lines - height) / 2,
+        col = (vim.o.columns - width) / 2,
+    }
 
-    timer.stop(timer)
-    timer = nil
+    vim.api.nvim_open_win(buf, true, win_opts)
+    vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', ':bd!<CR>', { noremap = true, silent = true })
 end
 
 local tick_callback = function()
-    seconds_remaining = seconds_remaining - 1
-    if seconds_remaining == 0 then
-        stop_timer()
+    local current_time = os.time()
+    local time_diff = math.abs(current_time - Pomodoro.start_time)
+
+    Pomodoro.remaining_secs = session_duration_in_secs - time_diff
+
+    if Pomodoro.remaining_secs <= 0 then
+        Pomodoro.clean_up()
+        vim.schedule(open_popup_win)
     end
 end
 
-local start_timer = function()
-    timer = vim.loop.new_timer()
-    timer.start(timer, 0, 1000, tick_callback)
+Pomodoro.setup = function(options)
+    config.setup(options)
+
+    vim.api.nvim_create_user_command('PomodoroStart', Pomodoro.start_timer, { nargs = 0 })
+    vim.api.nvim_create_user_command('PomodoroStop', Pomodoro.stop_timer, { nargs = 0 })
+    vim.api.nvim_create_user_command('PomodoroPause', Pomodoro.pause_timer, { nargs = 0 })
+
+    vim.keymap.set('n', '<leader>ts', '<Cmd>PomodoroStart<CR>', { noremap = true, silent = true })
+    vim.keymap.set('n', '<leader>te', '<Cmd>PomodoroStop<CR>', { noremap = true, silent = true })
+    vim.keymap.set('n', '<leader>tp', '<Cmd>PomodoroPause<CR>', { noremap = true, silent = true })
 end
 
-local setup = function()
-    vim.api.nvim_create_user_command("PomodoroStart", start_timer, { nargs = 0 })
-    vim.api.nvim_create_user_command("PomodoroStop", stop_timer, { nargs = 0 })
-    vim.api.nvim_create_user_command("PomodoroPause", pause_timer, { nargs = 0 })
-
-    vim.keymap.set("n", "<leader>tts", start_timer, { noremap = true, silent = true }) -- start session
-    vim.keymap.set("n", "<leader>tto", stop_timer, { noremap = true, silent = true })  -- stop session
-    vim.keymap.set("n", "<leader>ttp", pause_timer, { noremap = true, silent = true }) -- pause session
-
-    seconds_remaining = DEFAULT_SESSION_DURATION
+Pomodoro.start_timer = function()
+    Pomodoro.start_time = os.time()
+    Pomodoro.timer = vim.loop.new_timer()
+    Pomodoro.timer.start(Pomodoro.timer, 0, 1000, tick_callback)
 end
 
-local format_time = function(seconds)
-    local min = math.floor(seconds / 60)
-    local sec = math.floor(seconds % 60)
-    return string.format("%02d:%02d", min, sec)
+Pomodoro.pause_timer = function()
+    if Pomodoro.timer == nil then
+        return
+    end
+
+    Pomodoro.clean_up()
 end
 
-local get_remaining_time = function()
-    return ' ' .. format_time(seconds_remaining)
+Pomodoro.stop_timer = function()
+    if Pomodoro.timer == nil then
+        return
+    end
+
+    Pomodoro.clean_up()
 end
 
-return {
-    setup = setup,
-    start = start_timer,
-    stop = stop_timer,
-    pause = pause_timer,
-    get_remaining_time = get_remaining_time,
-}
+Pomodoro.clean_up = function()
+    if Pomodoro.timer then
+        Pomodoro.timer.stop(Pomodoro.timer)
+        Pomodoro.timer = nil
+    end
+end
+
+Pomodoro.get_remaining_time = function()
+    local t = util.format_time(Pomodoro.remaining_secs)
+
+    if config.options.icons then
+        return config.options.signs.clock .. t
+    else
+        return t
+    end
+end
+
+return Pomodoro
