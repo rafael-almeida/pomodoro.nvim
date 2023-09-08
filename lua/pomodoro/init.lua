@@ -1,7 +1,7 @@
 local config = require('pomodoro.config')
 local util = require('pomodoro.util')
 
-local session_duration_in_secs = config.options.session_duration * 60
+local session_duration_in_secs
 local popup_window_content = {
     '     POMODORO     ',
     ' Session Complete ',
@@ -29,6 +29,8 @@ end
 
 Pomodoro.setup = function()
     config.setup()
+
+    session_duration_in_secs = config.options.session_duration * 60
 
     vim.api.nvim_create_user_command('PomodoroStart', Pomodoro.start_timer, { nargs = 0 })
     vim.api.nvim_create_user_command('PomodoroStop', Pomodoro.stop_timer, { nargs = 0 })
