@@ -9,10 +9,9 @@ local defaults = {
     },
 }
 
-M.options = defaults
 
-M.setup = function(options)
-    M.options = vim.tbl_deep_extend("force", {}, defaults, options or {})
+M.setup = function()
+    M.options = defaults
 end
 
 return M

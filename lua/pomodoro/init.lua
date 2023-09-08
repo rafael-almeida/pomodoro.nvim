@@ -2,51 +2,33 @@ local config = require('pomodoro.config')
 local util = require('pomodoro.util')
 
 local session_duration_in_secs = config.options.session_duration * 60
+local popup_window_content = {
+    '     POMODORO     ',
+    ' Session Complete ',
+}
 
 local Pomodoro = {
     timer = nil,
     time_remaining = session_duration_in_secs,
 }
 
-local function open_popup_win()
-    local buf = vim.api.nvim_create_buf(false, true)
-    local lines = {
-        '                     ',
-        '      POMODORO       ',
-        '                     ',
-        '  Session Completed  ',
-        '                     ',
-    }
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-
-    local width = 21
-    local height = 5
-    local win_opts = {
-        style = 'minimal',
-        relative = 'editor',
-        width = width,
-        height = height,
-        row = (vim.o.lines - height) / 2,
-        col = (vim.o.columns - width) / 2,
-    }
-
-    vim.api.nvim_open_win(buf, true, win_opts)
-    vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', ':bd!<CR>', { noremap = true, silent = true })
-end
-
 local tick_callback = function()
-    if Pomodoro.time_remaining <= 0 then
-        vim.schedule(open_popup_win)
+    if Pomodoro.time_remaining > 0 then
+        Pomodoro.time_remaining = Pomodoro.time_remaining - 1
+    else
         Pomodoro.time_remaining = 0
         Pomodoro.stop_timer()
-        return
-    end
 
-    Pomodoro.time_remaining = Pomodoro.time_remaining - 1
+        if config.options.timeout_window then
+            vim.schedule(function()
+                util.open_popup_window(popup_window_content)
+            end)
+        end
+    end
 end
 
-Pomodoro.setup = function(options)
-    config.setup(options)
+Pomodoro.setup = function()
+    config.setup()
 
     vim.api.nvim_create_user_command('PomodoroStart', Pomodoro.start_timer, { nargs = 0 })
     vim.api.nvim_create_user_command('PomodoroStop', Pomodoro.stop_timer, { nargs = 0 })

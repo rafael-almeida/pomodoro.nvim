@@ -2,6 +2,28 @@ local M = {
     log_file_path = vim.fn.stdpath('data') .. '/pomodoro_history'
 }
 
+M.open_popup_window = function(lines)
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+    -- TODO: calculate width and height from lines. 
+    -- width = max[x.length for x in lines], height = lines.length
+    local width = 18
+    local height = 2
+
+    local win_opts = {
+        style = 'minimal',
+        relative = 'editor',
+        width = width,
+        height = height,
+        row = (vim.o.lines - height) / 2,
+        col = (vim.o.columns - width) / 2,
+    }
+
+    vim.api.nvim_open_win(buf, true, win_opts)
+    vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', ':bd!<CR>', { noremap = true, silent = true })
+end
+
 M.format_time = function(seconds)
     local min = math.floor(seconds / 60)
     local sec = math.floor(seconds % 60)
