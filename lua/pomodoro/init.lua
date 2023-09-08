@@ -43,7 +43,7 @@ local tick_callback = function()
     Pomodoro.remaining_secs = session_duration_in_secs - time_diff
 
     if Pomodoro.remaining_secs <= 0 then
-        Pomodoro.clean_up()
+        Pomodoro.stop_timer()
         vim.schedule(open_popup_win)
     end
 end
@@ -61,25 +61,32 @@ Pomodoro.setup = function(options)
 end
 
 Pomodoro.start_timer = function()
-    Pomodoro.start_time = os.time()
+    local curr_time = os.time()
+    Pomodoro.start_time = curr_time
     Pomodoro.timer = vim.loop.new_timer()
     Pomodoro.timer.start(Pomodoro.timer, 0, 1000, tick_callback)
+    util.write_to_log_file(curr_time .. "," .. "start")
 end
 
 Pomodoro.pause_timer = function()
+    local curr_time = os.time()
     if Pomodoro.timer == nil then
         return
     end
 
     Pomodoro.clean_up()
+    util.write_to_log_file(curr_time .. "," .. "pause")
 end
 
 Pomodoro.stop_timer = function()
+    local curr_time = os.time()
+
     if Pomodoro.timer == nil then
         return
     end
 
     Pomodoro.clean_up()
+    util.write_to_log_file(curr_time .. "," .. "stop")
 end
 
 Pomodoro.clean_up = function()
