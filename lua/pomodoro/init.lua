@@ -5,9 +5,7 @@ local session_duration_in_secs = config.options.session_duration * 60
 
 local Pomodoro = {
     timer = nil,
-    start_time = nil,
-    last_time = nil,
-    remaining_secs = session_duration_in_secs,
+    time_remaining = session_duration_in_secs,
 }
 
 local function open_popup_win()
@@ -37,15 +35,14 @@ local function open_popup_win()
 end
 
 local tick_callback = function()
-    local current_time = os.time()
-    local time_diff = math.abs(current_time - Pomodoro.start_time)
-
-    Pomodoro.remaining_secs = session_duration_in_secs - time_diff
-
-    if Pomodoro.remaining_secs <= 0 then
-        Pomodoro.stop_timer()
+    if Pomodoro.time_remaining <= 0 then
         vim.schedule(open_popup_win)
+        Pomodoro.time_remaining = 0
+        Pomodoro.stop_timer()
+        return
     end
+
+    Pomodoro.time_remaining = Pomodoro.time_remaining - 1
 end
 
 Pomodoro.setup = function(options)
@@ -61,31 +58,34 @@ Pomodoro.setup = function(options)
 end
 
 Pomodoro.start_timer = function()
-    local curr_time = os.time()
-    Pomodoro.start_time = curr_time
+    if Pomodoro.timer ~= nil then
+        return
+    end
+
     Pomodoro.timer = vim.loop.new_timer()
     Pomodoro.timer.start(Pomodoro.timer, 0, 1000, tick_callback)
+
+    local curr_time = os.time()
     util.write_to_log_file(curr_time .. "," .. "start")
 end
 
 Pomodoro.pause_timer = function()
-    local curr_time = os.time()
     if Pomodoro.timer == nil then
         return
     end
 
     Pomodoro.clean_up()
+    local curr_time = os.time()
     util.write_to_log_file(curr_time .. "," .. "pause")
 end
 
 Pomodoro.stop_timer = function()
-    local curr_time = os.time()
-
     if Pomodoro.timer == nil then
         return
     end
 
     Pomodoro.clean_up()
+    local curr_time = os.time()
     util.write_to_log_file(curr_time .. "," .. "stop")
 end
 
@@ -97,7 +97,7 @@ Pomodoro.clean_up = function()
 end
 
 Pomodoro.get_remaining_time = function()
-    local t = util.format_time(Pomodoro.remaining_secs)
+    local t = util.format_time(Pomodoro.time_remaining)
 
     if config.options.icons then
         return config.options.signs.clock .. t
